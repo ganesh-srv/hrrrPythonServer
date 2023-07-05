@@ -29,7 +29,7 @@ class ChunkIdFinder:
 # define endpoint for a GET request
 @serverApp.route('/test')
 def hello():
-    return jsonify({'message': 'Hello , World!'})
+    return jsonify({'message': 'Hello, World!'})
 
 
 
