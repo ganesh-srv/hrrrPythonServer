@@ -19,14 +19,14 @@ class ChunkIdFinder:
 
     @classmethod
     def getChunkId(cls, lat, long):
-     pprint(f'Latsrv: {lat}, Long: {long}')  # Print lat and long for debugging
-     pprint(cls.chunk_index)  # Print the chunk_index dataset for debugging
+    #  pprint(f'Latsrv: {lat}, Long: {long}')  # Print lat and long for debugging
+    #  pprint(cls.chunk_index)  # Print the chunk_index dataset for debugging
      projection = ccrs.LambertConformal(central_longitude=262.5, 
                                         central_latitude=38.5, 
                                         standard_parallels=(38.5, 38.5),
                                         globe=ccrs.Globe(semimajor_axis=6371229, semiminor_axis=6371229))
      x, y = projection.transform_point(long, lat, ccrs.PlateCarree())
-     pprint(f"x is :{x} and y is {y}")
+    #  pprint(f"x is :{x} and y is {y}")
      nearest_point = cls.chunk_index.sel(x=x, y=y, method="nearest")
      fcst_chunk_id = nearest_point.chunk_id.values
      return fcst_chunk_id, nearest_point
