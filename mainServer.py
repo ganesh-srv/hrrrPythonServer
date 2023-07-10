@@ -10,21 +10,27 @@ import os
 
 
 serverApp = Flask(__name__)
+data_folder = os.path.join(os.path.dirname(os.getcwd()), 'dataStore/now/')
 cache = TTLCache(maxsize=1000, ttl=300)
+
 class ChunkIdFinder:
     fs = s3fs.S3FileSystem(anon=True)
     chunk_index = xr.open_zarr(s3fs.S3Map("s3://hrrrzarr/grid/HRRR_chunk_index.zarr", s3=fs))
 
     @classmethod
     def getChunkId(cls, lat, long):
-        projection = ccrs.LambertConformal(central_longitude=262.5, 
-                                           central_latitude=38.5, 
-                                           standard_parallels=(38.5, 38.5),
-                                           globe=ccrs.Globe(semimajor_axis=6371229, semiminor_axis=6371229))
-        x, y = projection.transform_point(long, lat, ccrs.PlateCarree())
-        nearest_point = cls.chunk_index.sel(x=x, y=y, method="nearest")
-        fcst_chunk_id = nearest_point.chunk_id.values
-        return fcst_chunk_id, nearest_point
+     pprint(f'Latsrv: {lat}, Long: {long}')  # Print lat and long for debugging
+     pprint(cls.chunk_index)  # Print the chunk_index dataset for debugging
+     projection = ccrs.LambertConformal(central_longitude=262.5, 
+                                        central_latitude=38.5, 
+                                        standard_parallels=(38.5, 38.5),
+                                        globe=ccrs.Globe(semimajor_axis=6371229, semiminor_axis=6371229))
+     x, y = projection.transform_point(long, lat, ccrs.PlateCarree())
+     pprint(f"x is :{x} and y is {y}")
+     nearest_point = cls.chunk_index.sel(x=x, y=y, method="nearest")
+     fcst_chunk_id = nearest_point.chunk_id.values
+     return fcst_chunk_id, nearest_point
+
 
 # define endpoint for a GET request
 @serverApp.route('/test')
@@ -37,12 +43,12 @@ def hello():
 
 def kelvin_to_fahrenheit(K):
     F = (K - 273.15) * 1.8 + 32
-    return round(F)
+    return np.round(F, 2)
 
 
 
 def getChunkArr(id,field):
-    path = get_latest_folder('zarr-data')
+    path = get_latest_folder(data_folder)
     pprint(f'here is the relative path {path}')
     # path = get_latest_folder(path)
     # pprint(path)
@@ -51,26 +57,27 @@ def getChunkArr(id,field):
     pprint(f'here is the full url : {relative_path}')
     url = os.path.join(current_directory, relative_path)
     pprint(url)
-    data = retrieve_data_local(url)
-    pprint(url)
-    data = retrieve_data_local(url)
+    data = retrieve_data_local(url)  
     return data
 
 
 def getChunk(id, nearest_point, field):
-    path = get_latest_folder('zarr-data')
-    pprint(f'here is the relative path {path}')
+    path = get_latest_folder(data_folder)
+    # pprint(f'here is the relative path {path}')
     # path = get_latest_folder(path)
     # pprint(path)
     relative_path = os.path.join(path, '1', field, str(id))
     current_directory = os.getcwd()
-    pprint(f'here is the full url : {relative_path}')
+    # pprint(f'here is the full url : {relative_path}')
     url = os.path.join(current_directory, relative_path)
-    pprint(url)
+    # pprint(url)
     data = retrieve_data_local(url)
     values = data[nearest_point.in_chunk_x, nearest_point.in_chunk_y]
-    pprint(values)
+    print(nearest_point)
+    # pprint(values)
     return values
+
+
 
 
 
@@ -81,14 +88,11 @@ def get_latest_folder(relative_path):
     folders = [f for f in os.listdir(absolute_path) if os.path.isdir(os.path.join(absolute_path, f))]
     
     if folders:
-        now_folder_path = os.path.join(absolute_path, 'now')
-        now_folders = [f for f in os.listdir(now_folder_path) if os.path.isdir(os.path.join(now_folder_path, f))]
-        
-        if now_folders:
-            latest_folder = max(now_folders, key=lambda f: os.path.getmtime(os.path.join(now_folder_path, f)))
-            return os.path.join(relative_path, 'now', latest_folder)  # Return the path of the latest folder within 'now'
+        latest_folder = max(folders, key=lambda f: os.path.getmtime(os.path.join(absolute_path, f)))
+        return os.path.join(relative_path, latest_folder)  # Return the path of the latest folder
     
     return None
+
 
 
 def retrieve_data_local(url):
@@ -114,7 +118,8 @@ def retrieve_data_local(url):
     return data_array
 
 
-
+def convert_kelvin_to_fahrenheit(arr):
+    return (arr - 273.15) * 1.8 + 32
 
 
 
@@ -128,9 +133,11 @@ def getTemperatureChunk():
     chunk_id_finder = ChunkIdFinder()
     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
     # chunk_id, nearest_point = getChunkId(lat,long)
-    # pprint(str(chunk_id))
+    pprint(str(chunk_id))
     array = getChunkArr(chunk_id,'t2m')
-    return jsonify({'chunk': array.tolist()})
+    array_fahrenheit = np.vectorize(convert_kelvin_to_fahrenheit)(array)
+
+    return jsonify({'chunk': array_fahrenheit.tolist()})
 
 
 @serverApp.route('/visibility/now/chunk', methods=['POST'])
@@ -144,6 +151,7 @@ def getVisibilityChunk():
     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
     # chunk_id, nearest_point = getChunkId(lat,long)
     # pprint(str(chunk_id))
+    print(f"Nearest Point: {nearest_point}")
     array = getChunkArr(chunk_id,'vis')
     return jsonify({'chunk': array.tolist()})
 
@@ -152,13 +160,14 @@ def getVisibilityChunk():
 def getTemperature():
     data = request.get_json()
     # pprint(request)
-    pprint(data)
+    # pprint(data)
     lat = data['lat']
     long = data['long']
     chunk_id_finder = ChunkIdFinder()
     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
     # chunk_id, nearest_point = getChunkId(lat,long)
     # pprint(str(chunk_id))
+    # print(nearest_point)
     temperature = getChunk(chunk_id,nearest_point,'t2m')
     tempF = kelvin_to_fahrenheit(temperature)
     return jsonify({'temperature':tempF})
