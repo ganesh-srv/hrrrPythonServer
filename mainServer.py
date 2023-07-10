@@ -192,4 +192,4 @@ def getVisibility():
 
 
 if __name__ == '__main__':
- serverApp.run(port=5000, debug=False)
+ serverApp.run(host="0.0.0.0", port=5000, debug=False)
