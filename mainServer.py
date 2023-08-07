@@ -7,7 +7,8 @@ import numcodecs as ncd
 from cachetools import cached, TTLCache
 from pprint import pprint
 import os
-
+import setproctitle
+setproctitle.setproctitle("HRRRapiServer")
 
 serverApp = Flask(__name__)
 data_folder = os.path.join(os.path.dirname(os.getcwd()), 'dataStore/now/')
@@ -35,7 +36,7 @@ class ChunkIdFinder:
 # define endpoint for a GET request
 @serverApp.route('/test')
 def hello():
-    return jsonify({'message': 'Hello, World!'})
+    return jsonify({'message': 'Hello, World from mainServer'})
 
 
 
