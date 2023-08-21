@@ -31,6 +31,27 @@ class ChunkIdFinder:
      nearest_point = cls.chunk_index.sel(x=x, y=y, method="nearest")
      fcst_chunk_id = nearest_point.chunk_id.values
      return fcst_chunk_id, nearest_point
+    
+
+class ChunkIdFinderV2:
+    chunk_index = xr.open_zarr("/grid/HRRR_chunk_index.zarr")
+    ds_transposed = chunk_index['chunk_id'].transpose('x', 'y')
+    chunk_index['chunk_id']= ds_transposed
+
+    @classmethod
+    def getChunkId(cls, lat, long):
+    #  pprint(f'Latsrv: {lat}, Long: {long}')  # Print lat and long for debugging
+    #  pprint(cls.chunk_index)  # Print the chunk_index dataset for debugging
+     projection = ccrs.LambertConformal(central_longitude=262.5, 
+                                        central_latitude=38.5, 
+                                        standard_parallels=(38.5, 38.5),
+                                        globe=ccrs.Globe(semimajor_axis=6371229, semiminor_axis=6371229))
+     x, y = projection.transform_point(long, lat, ccrs.PlateCarree())
+    #  pprint(f"x is :{x} and y is {y}")
+     nearest_point = cls.chunk_index.sel(x=x, y=y, method="nearest")
+     fcst_chunk_id = nearest_point.chunk_id.values
+     return fcst_chunk_id, nearest_point
+
 
 
 # define endpoint for a GET request
@@ -173,6 +194,22 @@ def getTemperature():
     tempF = kelvin_to_fahrenheit(temperature)
     return jsonify({'temperature':tempF})
 
+@serverApp.route('/temperature/now/v2', methods=['POST'])
+def getTemperature1():
+    data = request.get_json()
+    # pprint(request)
+    # pprint(data)
+    lat = data['lat']
+    long = data['long']
+    chunk_id_finder = ChunkIdFinderV2()
+    chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
+    # chunk_id, nearest_point = getChunkId(lat,long)
+    # pprint(str(chunk_id))
+    # print(nearest_point)
+    temperature = getChunk(chunk_id,nearest_point,'t2m')
+    tempF = kelvin_to_fahrenheit(temperature)
+    return jsonify({'temperature':tempF})
+
 @serverApp.route('/visibility/now', methods=['POST'])
 def getVisibility():
     data = request.get_json()
@@ -188,6 +225,21 @@ def getVisibility():
     serialized_visibility = float(visibility)  # Convert to a float
     return jsonify({'visibility': serialized_visibility})
 
+
+@serverApp.route('/visibility/now/v2', methods=['POST'])
+def getVisibility2():
+    data = request.get_json()
+    # pprint(request)
+    pprint(data)
+    lat = data['lat']
+    long = data['long']
+    chunk_id_finder = ChunkIdFinderV2()
+    chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
+    # chunk_id, nearest_point = getChunkId(lat,long)
+    # pprint(str(chunk_id))
+    visibility = getChunk(chunk_id,nearest_point,'vis')
+    serialized_visibility = float(visibility)  # Convert to a float
+    return jsonify({'visibility': serialized_visibility})
 
 
 
