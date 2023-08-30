@@ -33,31 +33,31 @@ class ChunkIdFinder:
      return fcst_chunk_id, nearest_point
     
 
-class ChunkIdFinderV2:
-    chunk_index = xr.open_zarr("/grid/HRRR_chunk_index.zarr")
-    ds_transposed = chunk_index['chunk_id'].transpose('x', 'y')
-    chunk_index['chunk_id']= ds_transposed
+# class ChunkIdFinderV2:
+#     chunk_index = xr.open_zarr("/grid/HRRR_chunk_index.zarr")
+#     ds_transposed = chunk_index['chunk_id'].transpose('x', 'y')
+#     chunk_index['chunk_id']= ds_transposed
 
-    @classmethod
-    def getChunkId(cls, lat, long):
-    #  pprint(f'Latsrv: {lat}, Long: {long}')  # Print lat and long for debugging
-    #  pprint(cls.chunk_index)  # Print the chunk_index dataset for debugging
-     projection = ccrs.LambertConformal(central_longitude=262.5, 
-                                        central_latitude=38.5, 
-                                        standard_parallels=(38.5, 38.5),
-                                        globe=ccrs.Globe(semimajor_axis=6371229, semiminor_axis=6371229))
-     x, y = projection.transform_point(long, lat, ccrs.PlateCarree())
-    #  pprint(f"x is :{x} and y is {y}")
-     nearest_point = cls.chunk_index.sel(x=x, y=y, method="nearest")
-     fcst_chunk_id = nearest_point.chunk_id.values
-     return fcst_chunk_id, nearest_point
+#     @classmethod
+#     def getChunkId(cls, lat, long):
+#     #  pprint(f'Latsrv: {lat}, Long: {long}')  # Print lat and long for debugging
+#     #  pprint(cls.chunk_index)  # Print the chunk_index dataset for debugging
+#      projection = ccrs.LambertConformal(central_longitude=262.5, 
+#                                         central_latitude=38.5, 
+#                                         standard_parallels=(38.5, 38.5),
+#                                         globe=ccrs.Globe(semimajor_axis=6371229, semiminor_axis=6371229))
+#      x, y = projection.transform_point(long, lat, ccrs.PlateCarree())
+#     #  pprint(f"x is :{x} and y is {y}")
+#      nearest_point = cls.chunk_index.sel(x=x, y=y, method="nearest")
+#      fcst_chunk_id = nearest_point.chunk_id.values
+#      return fcst_chunk_id, nearest_point
 
 
 
 # define endpoint for a GET request
 @serverApp.route('/test')
 def hello():
-    return jsonify({'message': 'Hello, World from mainServer'})
+    return jsonify({'message': 'Hello, World from mainServer 1'})
 
 
 
@@ -226,23 +226,23 @@ def getVisibility():
     return jsonify({'visibility': serialized_visibility})
 
 
-@serverApp.route('/visibility/now/v2', methods=['POST'])
-def getVisibility2():
-    data = request.get_json()
-    # pprint(request)
-    pprint(data)
-    lat = data['lat']
-    long = data['long']
-    chunk_id_finder = ChunkIdFinderV2()
-    chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
-    # chunk_id, nearest_point = getChunkId(lat,long)
-    # pprint(str(chunk_id))
-    visibility = getChunk(chunk_id,nearest_point,'vis')
-    serialized_visibility = float(visibility)  # Convert to a float
-    return jsonify({'visibility': serialized_visibility})
+# @serverApp.route('/visibility/now/v2', methods=['POST'])
+# def getVisibility2():
+#     data = request.get_json()
+#     # pprint(request)
+#     pprint(data)
+#     lat = data['lat']
+#     long = data['long']
+#     chunk_id_finder = ChunkIdFinderV2()
+#     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
+#     # chunk_id, nearest_point = getChunkId(lat,long)
+#     # pprint(str(chunk_id))
+#     visibility = getChunk(chunk_id,nearest_point,'vis')
+#     serialized_visibility = float(visibility)  # Convert to a float
+#     return jsonify({'visibility': serialized_visibility})
 
 
 
 
 if __name__ == '__main__':
- serverApp.run(host="0.0.0.0", port=5000, debug=False)
+ serverApp.run(host="0.0.0.0", port=5000, debug=True)
