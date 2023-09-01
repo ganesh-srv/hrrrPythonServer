@@ -57,7 +57,7 @@ class ChunkIdFinder:
 # define endpoint for a GET request
 @serverApp.route('/test')
 def hello():
-    return jsonify({'message': 'Hello, World from mainServer 12'})
+    return jsonify({'message': 'Hello, World from mainServer'})
 
 
 
