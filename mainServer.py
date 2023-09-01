@@ -57,7 +57,7 @@ class ChunkIdFinder:
 # define endpoint for a GET request
 @serverApp.route('/test')
 def hello():
-    return jsonify({'message': 'Hello, World from mainServer 1'})
+    return jsonify({'message': 'Hello, World from mainServer 12'})
 
 
 
@@ -85,9 +85,6 @@ def getChunkArr(id,field):
 
 def getChunk(id, nearest_point, field):
     path = get_latest_folder(data_folder)
-    # pprint(f'here is the relative path {path}')
-    # path = get_latest_folder(path)
-    # pprint(path)
     relative_path = os.path.join(path, '1', field, str(id))
     current_directory = os.getcwd()
     # pprint(f'here is the full url : {relative_path}')
@@ -194,21 +191,21 @@ def getTemperature():
     tempF = kelvin_to_fahrenheit(temperature)
     return jsonify({'temperature':tempF})
 
-@serverApp.route('/temperature/now/v2', methods=['POST'])
-def getTemperature1():
-    data = request.get_json()
-    # pprint(request)
-    # pprint(data)
-    lat = data['lat']
-    long = data['long']
-    chunk_id_finder = ChunkIdFinderV2()
-    chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
-    # chunk_id, nearest_point = getChunkId(lat,long)
-    # pprint(str(chunk_id))
-    # print(nearest_point)
-    temperature = getChunk(chunk_id,nearest_point,'t2m')
-    tempF = kelvin_to_fahrenheit(temperature)
-    return jsonify({'temperature':tempF})
+# @serverApp.route('/temperature/now/v2', methods=['POST'])
+# def getTemperature1():
+#     data = request.get_json()
+#     # pprint(request)
+#     # pprint(data)
+#     lat = data['lat']
+#     long = data['long']
+#     chunk_id_finder = ChunkIdFinderV2()
+#     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
+#     # chunk_id, nearest_point = getChunkId(lat,long)
+#     # pprint(str(chunk_id))
+#     # print(nearest_point)
+#     temperature = getChunk(chunk_id,nearest_point,'t2m')
+#     tempF = kelvin_to_fahrenheit(temperature)
+#     return jsonify({'temperature':tempF})
 
 @serverApp.route('/visibility/now', methods=['POST'])
 def getVisibility():
