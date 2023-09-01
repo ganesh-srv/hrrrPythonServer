@@ -158,7 +158,7 @@ def getTemperatureChunk():
 
     return jsonify({'chunk': array_fahrenheit.tolist()})
 
-
+@cached(cache)
 @serverApp.route('/visibility/now/chunk', methods=['POST'])
 def getVisibilityChunk():
     data = request.get_json()
