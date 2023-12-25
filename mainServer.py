@@ -7,12 +7,20 @@ import numcodecs as ncd
 from cachetools import cached, TTLCache
 from pprint import pprint
 import os
-import setproctitle
-setproctitle.setproctitle("HRRRapiServer")
+# import setproctitle
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+# setproctitle.setproctitle("HRRRapiServer")
 
 serverApp = Flask(__name__)
 data_folder = os.path.join(os.path.dirname(os.getcwd()), 'dataStore/now/')
 cache = TTLCache(maxsize=1000, ttl=300)
+
+
+
+# Set up Flask-JWT-Extended
+serverApp.config['JWT_SECRET_KEY'] = 'hrrr-weather-lawn'
+jwt = JWTManager(serverApp)
+
 
 class ChunkIdFinder:
     fs = s3fs.S3FileSystem(anon=True)
@@ -20,8 +28,6 @@ class ChunkIdFinder:
 
     @classmethod
     def getChunkId(cls, lat, long):
-    #  pprint(f'Latsrv: {lat}, Long: {long}')  # Print lat and long for debugging
-    #  pprint(cls.chunk_index)  # Print the chunk_index dataset for debugging
      projection = ccrs.LambertConformal(central_longitude=262.5, 
                                         central_latitude=38.5, 
                                         standard_parallels=(38.5, 38.5),
@@ -59,26 +65,16 @@ class ChunkIdFinder:
 def hello():
     return jsonify({'message': 'Hello, World from mainServer'})
 
-
-
-
-
 def kelvin_to_fahrenheit(K):
     F = (K - 273.15) * 1.8 + 32
     return np.round(F, 2)
 
-
-
 def getChunkArr(id,field):
     path = get_latest_folder(data_folder)
-    pprint(f'here is the relative path {path}')
-    # path = get_latest_folder(path)
-    # pprint(path)
     relative_path = os.path.join(path, '1', field, str(id))
     current_directory = os.getcwd()
-    pprint(f'here is the full url : {relative_path}')
     url = os.path.join(current_directory, relative_path)
-    pprint(url)
+    # pprint(url)
     data = retrieve_data_local(url)  
     return data
 
@@ -87,13 +83,9 @@ def getChunk(id, nearest_point, field):
     path = get_latest_folder(data_folder)
     relative_path = os.path.join(path, '1', field, str(id))
     current_directory = os.getcwd()
-    # pprint(f'here is the full url : {relative_path}')
     url = os.path.join(current_directory, relative_path)
-    # pprint(url)
     data = retrieve_data_local(url)
     values = data[nearest_point.in_chunk_x, nearest_point.in_chunk_y]
-    print(nearest_point)
-    # pprint(values)
     return values
 
 
@@ -115,7 +107,6 @@ def get_latest_folder(relative_path):
 
 
 def retrieve_data_local(url):
-    pprint(url)
     with open(url, 'rb') as compressed_data: # using regular file system
         buffer = ncd.blosc.decompress(compressed_data.read())
         # pprint(buffer)
@@ -123,7 +114,7 @@ def retrieve_data_local(url):
         dtype = "<f4"
         if "surface/PRES" in url: # surface/PRES is the only variable with a larger data type
             dtype = "<f4"
-        print(dtype)
+        # print(dtype)
         chunk = np.frombuffer(buffer, dtype)
         
         entry_size = 150*150
@@ -143,6 +134,7 @@ def convert_kelvin_to_fahrenheit(arr):
 
 
 @serverApp.route('/temperature/now/chunk', methods=['POST'])
+@jwt_required
 def getTemperatureChunk():
     data = request.get_json()
     # pprint(request)
@@ -156,10 +148,11 @@ def getTemperatureChunk():
     array = getChunkArr(chunk_id,'t2m')
     array_fahrenheit = np.vectorize(convert_kelvin_to_fahrenheit)(array)
 
-    return jsonify({'chunk': array_fahrenheit.tolist()})
+    return jsonify({'chunk': array.tolist()})
 
 @cached(cache)
 @serverApp.route('/visibility/now/chunk', methods=['POST'])
+@jwt_required
 def getVisibilityChunk():
     data = request.get_json()
     # pprint(request)
@@ -176,6 +169,7 @@ def getVisibilityChunk():
 
 
 @serverApp.route('/temperature/now', methods=['POST'])
+@jwt_required
 def getTemperature():
     data = request.get_json()
     # pprint(request)
@@ -208,6 +202,7 @@ def getTemperature():
 #     return jsonify({'temperature':tempF})
 
 @serverApp.route('/visibility/now', methods=['POST'])
+@jwt_required
 def getVisibility():
     data = request.get_json()
     # pprint(request)
