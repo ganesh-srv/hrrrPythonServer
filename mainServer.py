@@ -63,6 +63,8 @@ class ChunkIdFinder:
 # define endpoint for a GET request
 @serverApp.route('/test')
 def hello():
+    # token_data = get_jwt()
+    # print("Token Contents:", token_data)
     return jsonify({'message': 'Hello, World from mainServer'})
 
 def kelvin_to_fahrenheit(K):
@@ -134,7 +136,7 @@ def convert_kelvin_to_fahrenheit(arr):
 
 
 @serverApp.route('/temperature/now/chunk', methods=['POST'])
-@jwt_required
+@jwt_required()
 def getTemperatureChunk():
     data = request.get_json()
     # pprint(request)
@@ -152,7 +154,7 @@ def getTemperatureChunk():
 
 @cached(cache)
 @serverApp.route('/visibility/now/chunk', methods=['POST'])
-@jwt_required
+@jwt_required()
 def getVisibilityChunk():
     data = request.get_json()
     # pprint(request)
@@ -169,7 +171,7 @@ def getVisibilityChunk():
 
 
 @serverApp.route('/temperature/now', methods=['POST'])
-@jwt_required
+@jwt_required()
 def getTemperature():
     data = request.get_json()
     # pprint(request)
@@ -202,8 +204,10 @@ def getTemperature():
 #     return jsonify({'temperature':tempF})
 
 @serverApp.route('/visibility/now', methods=['POST'])
-@jwt_required
+@jwt_required()
 def getVisibility():
+    # token_data = get_jwt()
+    # print("Token Contents:", token_data)
     data = request.get_json()
     # pprint(request)
     pprint(data)
