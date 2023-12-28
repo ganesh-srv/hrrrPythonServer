@@ -56,7 +56,14 @@ class ChunkIdFinder:
 #      fcst_chunk_id = nearest_point.chunk_id.values
 #      return fcst_chunk_id, nearest_point
 
-
+@serverApp.before_request
+def validate_request():
+    required_fields = ['lat', 'long']  # replace with your actual fields
+    if not request.json:
+        return jsonify({'error': 'Missing JSON in request body'}), 400
+    for field in required_fields:
+        if field not in request.json:
+            return jsonify({'error': f'Missing field: {field}'}), 400
 
 # Test request
 @serverApp.route('/test')
@@ -140,16 +147,12 @@ def convert_kelvin_to_fahrenheit(arr):
 @jwt_required()
 def getTemperatureChunk():
     data = request.get_json()
-    # pprint(request)
     pprint(data)
     lat = data['lat']
     long = data['long']
     chunk_id_finder = ChunkIdFinder()
     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
-    # pprint(str(chunk_id))
     array = getChunkArr(chunk_id,'t2m')
-    array_fahrenheit = np.vectorize(convert_kelvin_to_fahrenheit)(array)
-
     return jsonify({'chunk': array.tolist()})
 
 @cached(cache)
@@ -157,7 +160,6 @@ def getTemperatureChunk():
 @jwt_required()
 def getVisibilityChunk():
     data = request.get_json()
-    # pprint(request)
     pprint(data)
     lat = data['lat']
     long = data['long']
