@@ -66,9 +66,9 @@ def validate_request():
             return jsonify({'error': f'Missing field: {field}'}), 400
 
 # Test request
-@serverApp.route('/test')
+@serverApp.route('/health')
 def hello():
-    return jsonify({'message': 'Hello, World from mainServer'})
+    return jsonify({'staus': 'Ok'})
 
 
 # conversion kelvin to fahrenheit
