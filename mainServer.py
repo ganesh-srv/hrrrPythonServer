@@ -7,9 +7,7 @@ import numcodecs as ncd
 from cachetools import cached, TTLCache
 from pprint import pprint
 import os
-# import setproctitle
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
-# setproctitle.setproctitle("HRRRapiServer")
+from flask_jwt_extended import JWTManager, jwt_required
 
 serverApp = Flask(__name__)
 data_folder = os.path.join(os.path.dirname(os.getcwd()), 'dataStore/now/')
@@ -60,17 +58,19 @@ class ChunkIdFinder:
 
 
 
-# define endpoint for a GET request
+# Test request
 @serverApp.route('/test')
 def hello():
-    # token_data = get_jwt()
-    # print("Token Contents:", token_data)
     return jsonify({'message': 'Hello, World from mainServer'})
 
+
+# conversion kelvin to fahrenheit
 def kelvin_to_fahrenheit(K):
     F = (K - 273.15) * 1.8 + 32
     return np.round(F, 2)
 
+
+# Gets the chunk array based on chunk id from the dataStore
 def getChunkArr(id,field):
     path = get_latest_folder(data_folder)
     relative_path = os.path.join(path, '1', field, str(id))
@@ -81,6 +81,7 @@ def getChunkArr(id,field):
     return data
 
 
+# Gets the chunk and returns the nearest data point value
 def getChunk(id, nearest_point, field):
     path = get_latest_folder(data_folder)
     relative_path = os.path.join(path, '1', field, str(id))
@@ -129,7 +130,7 @@ def retrieve_data_local(url):
 
     return data_array
 
-
+# conversion kelvin to fahrenheit
 def convert_kelvin_to_fahrenheit(arr):
     return (arr - 273.15) * 1.8 + 32
 
@@ -145,8 +146,7 @@ def getTemperatureChunk():
     long = data['long']
     chunk_id_finder = ChunkIdFinder()
     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
-    # chunk_id, nearest_point = getChunkId(lat,long)
-    pprint(str(chunk_id))
+    # pprint(str(chunk_id))
     array = getChunkArr(chunk_id,'t2m')
     array_fahrenheit = np.vectorize(convert_kelvin_to_fahrenheit)(array)
 
@@ -174,15 +174,10 @@ def getVisibilityChunk():
 @jwt_required()
 def getTemperature():
     data = request.get_json()
-    # pprint(request)
-    # pprint(data)
     lat = data['lat']
     long = data['long']
     chunk_id_finder = ChunkIdFinder()
     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
-    # chunk_id, nearest_point = getChunkId(lat,long)
-    # pprint(str(chunk_id))
-    # print(nearest_point)
     temperature = getChunk(chunk_id,nearest_point,'t2m')
     tempF = kelvin_to_fahrenheit(temperature)
     return jsonify({'temperature':tempF})
@@ -206,17 +201,12 @@ def getTemperature():
 @serverApp.route('/visibility/now', methods=['POST'])
 @jwt_required()
 def getVisibility():
-    # token_data = get_jwt()
-    # print("Token Contents:", token_data)
     data = request.get_json()
-    # pprint(request)
     pprint(data)
     lat = data['lat']
     long = data['long']
     chunk_id_finder = ChunkIdFinder()
     chunk_id, nearest_point = chunk_id_finder.getChunkId(lat, long)
-    # chunk_id, nearest_point = getChunkId(lat,long)
-    # pprint(str(chunk_id))
     visibility = getChunk(chunk_id,nearest_point,'vis')
     serialized_visibility = float(visibility)  # Convert to a float
     return jsonify({'visibility': serialized_visibility})
