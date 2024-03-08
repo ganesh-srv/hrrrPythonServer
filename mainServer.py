@@ -189,7 +189,7 @@ def getVisibilityChunk():
 
 
 @serverApp.route('/temperature/now', methods=['POST'])
-# @jwt_required()
+@jwt_required()
 def getTemperature():
     data = request.get_json()
     lat = data['lat']
