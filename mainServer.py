@@ -145,7 +145,7 @@ def convert_kelvin_to_fahrenheit(arr):
 
 
 @serverApp.route('/temperature/now/chunk', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def getTemperatureChunk():
     data = request.get_json()
     pprint(data)
@@ -173,7 +173,7 @@ def getTemperatureChunk():
 
 @cached(cache)
 @serverApp.route('/visibility/now/chunk', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def getVisibilityChunk():
     data = request.get_json()
     pprint(data)
@@ -189,7 +189,7 @@ def getVisibilityChunk():
 
 
 @serverApp.route('/temperature/now', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def getTemperature():
     data = request.get_json()
     lat = data['lat']
@@ -218,7 +218,7 @@ def getTemperature():
 #     return jsonify({'temperature':tempF})
 
 @serverApp.route('/visibility/now', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def getVisibility():
     data = request.get_json()
     pprint(data)
